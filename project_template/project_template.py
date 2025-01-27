@@ -17,7 +17,7 @@ import os                                           # Operating System für den 
 py.init()                                      # Pygames initialisieren
 win_size = (800,800)                           # Fenstergrösse
 screen = py.display.set_mode(win_size)         # Fenstergrösse setzen
-py.display.set_caption("Pygames")           # Titel des Fensters
+py.display.set_caption("Male nicht den Teufel an die Wand")           # Titel des Fensters
 clock = py.time.Clock() 					   # Eine Pygame-Uhr um die Framerate zu kontrollieren
 my_font = py.font.SysFont('Comic Sans MS', 36)
 
@@ -50,18 +50,22 @@ class Player(py.sprite.Sprite):                                          # Wie s
     #######################################
     def __init__(self, left, up, right, down):                           # Hier ist der Bauplan des Players
         super().__init__()                                               # Musst du nicht verstehen
-        self.images = load_images("res/images/santa/","santa",".gif",40,100,100)    # Bild laden
-        self.image  = self.images[0]         # Bild skalieren
-        self.rect   = self.image.get_rect()                              # Umrechteck bestimmen
-        self.rect.x = random.randint(100,700)                            # zufälliger x-Startpunkt
-        self.rect.y = random.randint(100,700)                            # zufälliger y-Startpunkt
+        self.images = load_images  # kommt noch   # Bild laden
+        self.image = py.Surface((50, 50))
+        self.image.fill((0, 0, 255))  # Spieler ist blau
+        self.rect = self.image.get_rect()
+        self.rect.x = win_size[0] // 2
+        self.rect.y = win_size[1] // 2
         self.left = left
         self.up = up
         self.right = right
         self.down = down
         self.speed = random.randint(5, 10)
         self.costume = 0
+        self.speed = 5
         self.points = 0
+        
+        
         
     def move(self):
         key = py.key.get_pressed()                                     # Alle gedrückten Tasten abrufen
@@ -73,7 +77,7 @@ class Player(py.sprite.Sprite):                                          # Wie s
             self.rect.x = self.rect.x + self.speed
         if key[self.down] == True and self.rect.y + self.rect.height < win_size[1]:
             self.rect.y = self.rect.y + self.speed
-    
+            
     def change_costume(self):
         self.costume = self.costume + 1
         if self.costume == len(self.images):
@@ -105,6 +109,38 @@ class Game():
         
         self.all_sprites.add(self.player_1)
         self.game_clock = py.time.get_ticks()
+        
+##########################################
+# Die Klasse der Teufel
+##########################################
+class Devil(py.sprite.Sprite):  
+    def __init__(self):
+        super().__init__()
+        self.image = py.Surface((40, 40))
+        self.image.fill((255, 0, 0))  # Teufel sind rot (Bild kommt noch)
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(0, win_size[0])
+        self.rect.y = random.randint(0, win_size[1])
+        self.speed_x = random.choice([-3, -2, -1, 1, 2, 3])  # Bewegung in x-Richtung
+        self.speed_y = random.choice([-3, -2, -1, 1, 2, 3])  # Bewegung in y-Richtung
+        
+        
+        
+##########################################
+# Die Klasse der Spielfigur (Habe noch keinen Namen)
+##########################################
+class Game:
+    def __init__(self):
+        self.game_state = "intro"
+        self.player_1 = Player(py.K_LEFT, py.K_UP, py.K_RIGHT, py.K_DOWN)
+        self.all_sprites = py.sprite.Group()
+        self.all_sprites.add(self.player_1)
+
+        self.devils = py.sprite.Group()  # Gruppe der Teufel
+        self.spawn_timer = 0
+
+        self.lives = 7  # Maximal 7 Leben
+        self.score = 0  # Punkte        
         
         
         
