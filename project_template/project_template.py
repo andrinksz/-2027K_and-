@@ -33,6 +33,18 @@ in_hell = True
 
 font = pygame.font.SysFont(None, 36)
 
+
+def load_images(path,names,ending,number,xpix,ypix):
+    file_names = []                                                      # Liste der Namen der Bilder generieren
+    for i in range(number):                                              # Alle Namen durchgehen
+        file_names.append(path+names+str(i)+ending)                      # Alle vorhandenen Bildernamen generieren
+    animation = []                                                       # Liste für die Bilder
+    for i in range(number):                                              # Alle Bilder durchgehen
+        img = pygame.image.load(file_names[i]).convert()                     # Bild laden
+        animation.append(pygame.transform.scale(img, (xpix, ypix)))          # Bild vergrössern und in die Liste aufnehmen
+    return animation
+
+
 def draw_timers():
     phase_time_text = font.render(f"{int(phase_timer)}s", True, BLACK)
     total_time_text = font.render(f"{int(total_timer)}s", True, BLACK)
@@ -63,9 +75,8 @@ class Devil(pygame.sprite.Sprite):
     def __init__(self, direction, is_super=False):
         super().__init__()
         self.is_super = is_super
-        self.image = pygame.Surface((40, 40))
-        self.image.fill(DARK_RED if self.is_super else RED)
-        self.rect = self.image.get_rect()
+        self.images = load_images("res/images/teufel/","teufel",".png",3,40,40)
+        self.rect = self.images.get_rect()
         self.speed = random.randint(4, 8) if self.is_super else random.randint(3, 7)
         self.direction = direction
 
