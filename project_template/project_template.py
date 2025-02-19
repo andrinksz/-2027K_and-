@@ -1,217 +1,204 @@
-##########################################
-# WB Pygames
-# Autor: Lukas Zehnder
-# Letzte Änderungen: 23.01.2024, 
-##########################################
+import pygame
+import random
+import sys
 
-##########################################
-# Externe Bibliotheken einbinden
-##########################################
-import pygame as py                                 # Pygames
-import random                                # Zufallszahlen
-import os                                           # Operating System für den relativen Pfad
+# Initialisierung von Pygame
+pygame.init()
 
-##########################################
-# Pygames initialisieren
-##########################################
-py.init()                                      # Pygames initialisieren
-win_size = (800,800)                           # Fenstergrösse
-screen = py.display.set_mode(win_size)         # Fenstergrösse setzen
-py.display.set_caption("Male nicht den Teufel an die Wand")           # Titel des Fensters
-clock = py.time.Clock() 					   # Eine Pygame-Uhr um die Framerate zu kontrollieren
-my_font = py.font.SysFont('Comic Sans MS', 36)
+# Bildschirmkonfiguration
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Flucht aus der Hölle")
 
+# Farben
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+DARK_RED = (139, 0, 0)  # Super-Teufel Farbe
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+LIGHT_BLUE = (173, 216, 230)
 
-#########################################################################
-# Beginn Funktionen
-#########################################################################
+# Herz-Symbol laden
+heart_image = pygame.image.load("res/images/herz/herz.png") 
+heart_image = pygame.transform.scale(heart_image, (30, 30))
 
-def load_images(path,names,ending,number,xpix,ypix):
-    file_names = []                                                      # Liste der Namen der Bilder generieren
-    for i in range(number):                                              # Alle Namen durchgehen
-        file_names.append(path+names+str(i)+ending)                      # Alle vorhandenen Bildernamen generieren
-    animation = []                                                       # Liste für die Bilder
-    for i in range(number):                                              # Alle Bilder durchgehen
-        img = py.image.load(file_names[i]).convert()                     # Bild laden
-        animation.append(py.transform.scale(img, (xpix, ypix)))          # Bild vergrössern und in die Liste aufnehmen
-    return animation
+# FPS und Zeit
+clock = pygame.time.Clock()
+FPS = 60
 
-#########################################################################
-# Beginn der Klassendefinitionen
-#########################################################################
+total_timer = 0
+phase_timer = 30
+in_hell = True
 
+font = pygame.font.SysFont(None, 36)
 
-##########################################
-# Die Klasse des Spielers
-##########################################
-class Player(py.sprite.Sprite):                                          # Wie sieht der Player aus?
-    #######################################
-    # Bauplan des Spielers
-    #######################################
-    def __init__(self, left, up, right, down):                           # Hier ist der Bauplan des Players
-        super().__init__()                                               # Musst du nicht verstehen
-        self.images = load_images  # kommt noch   # Bild laden
-        self.image = py.Surface((50, 50))
-        self.image.fill((0, 0, 255))  # Spieler ist blau
-        self.rect = self.image.get_rect()
-        self.rect.x = win_size[0] // 2
-        self.rect.y = win_size[1] // 2
-        self.left = left
-        self.up = up
-        self.right = right
-        self.down = down
-        self.speed = random.randint(5, 10)
-        self.costume = 0
-        self.speed = 5
-        self.points = 0
-        
-        
-        
-    def move(self):
-        key = py.key.get_pressed()                                     # Alle gedrückten Tasten abrufen
-        if key[self.left] == True and self.rect.x > 0:                 # Ist die linke Pfeiltaste gedrückt worden?
-            self.rect.x = self.rect.x - self.speed
-        if key[self.up] == True and self.rect.y > 0:                   # Ist die linke Pfeiltaste gedrückt worden?
-            self.rect.y = self.rect.y - self.speed
-        if key[self.right] == True and self.rect.x + self.rect.width < win_size[0]:
-            self.rect.x = self.rect.x + self.speed
-        if key[self.down] == True and self.rect.y + self.rect.height < win_size[1]:
-            self.rect.y = self.rect.y + self.speed
-            
-    def change_costume(self):
-        self.costume = self.costume + 1
-        if self.costume == len(self.images):
-            self.costume = 0
-        self.image = self.images[self.costume]
+def draw_timers():
+    phase_time_text = font.render(f"{int(phase_timer)}s", True, BLACK)
+    total_time_text = font.render(f"{int(total_timer)}s", True, BLACK)
+    screen.blit(phase_time_text, (10, 10))
+    screen.blit(total_time_text, (10, 50))
 
-
-
-##########################################
-# Die Klasse des Spiels, welche alle Objekte beinhalten sollte
-##########################################
-class Game():
-    def __init__(self):
-        self.game_state = "intro"
-        
-        # create dictionary and save images in it
-        self.background_images = {}
-        self.background_images["img_intro"] = py.transform.scale(py.image.load("res/images/background/winter_intro.jpg"),
-                                                                 (win_size[0], win_size[1]))
-        self.background_images["img_game"] = py.transform.scale(py.image.load("res/images/background/winter_landscape.jpg"),
-                                                                 (win_size[0], win_size[1]))
-        self.background_images["img_end"] = py.transform.scale(py.image.load("res/images/background/winter_game_over.jpg"),
-                                                                 (win_size[0], win_size[1]))   
-            
-        # Gruppen und Objekte
-        self.player_1 = Player(py.K_LEFT, py.K_UP, py.K_RIGHT, py.K_DOWN)
-        
-        self.all_sprites = py.sprite.Group()                     # Gruppe aller Sprites
-        
-        self.all_sprites.add(self.player_1)
-        self.game_clock = py.time.get_ticks()
-        
-##########################################
-# Die Klasse der Teufel
-##########################################
-class Devil(py.sprite.Sprite):  
+# Spielerklasse
+class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = py.Surface((40, 40))
-        self.image.fill((255, 0, 0))  # Teufel sind rot (Bild kommt noch)
+        self.image = pygame.Surface((50, 50))
+        self.image.fill(BLUE)
+        self.rect = self.image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        self.speed = 5
+
+    def update(self, keys):
+        if keys[pygame.K_UP] and self.rect.top > 0:
+            self.rect.y -= self.speed
+        if keys[pygame.K_DOWN] and self.rect.bottom < SCREEN_HEIGHT:
+            self.rect.y += self.speed
+        if keys[pygame.K_LEFT] and self.rect.left > 0:
+            self.rect.x -= self.speed
+        if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH:
+            self.rect.x += self.speed
+
+# Teufelklasse
+class Devil(pygame.sprite.Sprite):
+    def __init__(self, direction, is_super=False):
+        super().__init__()
+        self.is_super = is_super
+        self.image = pygame.Surface((40, 40))
+        self.image.fill(DARK_RED if self.is_super else RED)
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, win_size[0])
-        self.rect.y = random.randint(0, win_size[1])
-        self.speed_x = random.choice([-3, -2, -1, 1, 2, 3])  # Bewegung in x-Richtung
-        self.speed_y = random.choice([-3, -2, -1, 1, 2, 3])  # Bewegung in y-Richtung
+        self.speed = random.randint(4, 8) if self.is_super else random.randint(3, 7)
+        self.direction = direction
+
+        if self.direction == "left_to_right":
+            self.rect.x = 0
+            self.rect.y = random.randint(0, SCREEN_HEIGHT)
+        elif self.direction == "right_to_left":
+            self.rect.x = SCREEN_WIDTH
+            self.rect.y = random.randint(0, SCREEN_HEIGHT)
+        elif self.direction == "top_to_bottom":
+            self.rect.x = random.randint(0, SCREEN_WIDTH)
+            self.rect.y = 0
+        elif self.direction == "bottom_to_top":
+            self.rect.x = random.randint(0, SCREEN_WIDTH)
+            self.rect.y = SCREEN_HEIGHT
+
+    def update(self):
+        if self.direction == "left_to_right":
+            self.rect.x += self.speed
+        elif self.direction == "right_to_left":
+            self.rect.x -= self.speed
+        elif self.direction == "top_to_bottom":
+            self.rect.y += self.speed
+        elif self.direction == "bottom_to_top":
+            self.rect.y -= self.speed
         
-        
-        
-##########################################
-# Die Klasse der Spielfigur (Habe noch keinen Namen)
-##########################################
-class Game:
+        if (
+            self.rect.x > SCREEN_WIDTH or self.rect.x < 0 or
+            self.rect.y > SCREEN_HEIGHT or self.rect.y < 0
+        ):
+            self.kill()
+
+# Engelklasse
+class Angel(pygame.sprite.Sprite):
     def __init__(self):
-        self.game_state = "intro"
-        self.player_1 = Player(py.K_LEFT, py.K_UP, py.K_RIGHT, py.K_DOWN)
-        self.all_sprites = py.sprite.Group()
-        self.all_sprites.add(self.player_1)
+        super().__init__()
+        self.image = pygame.Surface((30, 30))
+        self.image.fill(YELLOW)
+        self.rect = self.image.get_rect(
+            center=(random.randint(50, SCREEN_WIDTH - 50), random.randint(50, SCREEN_HEIGHT - 50))
+        )
+        self.spawn_time = pygame.time.get_ticks()
 
-        self.devils = py.sprite.Group()  # Gruppe der Teufel
-        self.spawn_timer = 0
+    def update(self):
+        if pygame.time.get_ticks() - self.spawn_time > 2000:
+            self.kill()
 
-        self.lives = 7  # Maximal 7 Leben
-        self.score = 0  # Punkte        
-        
-        
-        
-    def check_collisions(self):
-        pass
-        
-    def draw_score(self):
-        time_passed = py.time.get_ticks() - self.game_clock
-        text = my_font.render("Time: " + str(int(time_passed/100)/10),True, (255,0,0)) 
-        screen.blit(text,(50,20)) 
-        
-    def draw_intro(self):
-        screen.blit(self.background_images["img_intro"], (0,0))
+# Spielvariablen
+player = Player()
+player_group = pygame.sprite.Group(player)
+
+devils = pygame.sprite.Group()
+angels = pygame.sprite.Group()
+
+hit_count = 0
+max_hits = 7
+spawn_timer = 0
+angel_spawn_timer = 0
+collected_angels = 0
+extra_lives = 0
+
+devil_count = 0  # Zählt normale Teufel für Super-Teufel-Spawns
+
+def draw_hearts():
+    for i in range(max_hits - hit_count + extra_lives):
+        screen.blit(heart_image, (SCREEN_WIDTH - (i + 1) * 35, 10))
+
+# Hauptspiel-Loop
+running = True
+while running:
+    screen.fill(LIGHT_BLUE if not in_hell else WHITE)
     
-    def draw_game(self):
-        screen.blit(self.background_images["img_game"], (0,0))
-        self.all_sprites.draw(screen)
-        self.draw_score()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    keys = pygame.key.get_pressed()
+    player_group.update(keys)
+
+    # Timer-Update
+    total_timer += 1 / FPS
+    phase_timer -= 1 / FPS
+    
+    # Wechsel zwischen Hölle (30s) und Himmel (10s)
+    if phase_timer <= 0:
+        in_hell = not in_hell
+        phase_timer = 30 if in_hell else 10
         
-    def draw_game_over(self):
-        screen.blit(self.background_images["img_end"], (0,0))
-                
-    def run(self):
-        ##########################################
-        # Hauptschleife
-        ##########################################
-        while True:                              # Solange das Spiel läuft...
+        if in_hell:
+            angels.empty()
+        else:
+            devils.empty()
+
+        extra_lives += collected_angels
+        collected_angels = 0  
+
+    if in_hell:
+        spawn_timer += 1
+        if spawn_timer >= 30:
+            devil_count += 1
+            is_super = devil_count % 20 == 0  # Jeder 20. Teufel ist ein Super-Teufel
+            direction = random.choice(["left_to_right", "right_to_left", "top_to_bottom", "bottom_to_top"])
+            devils.add(Devil(direction, is_super))
+            spawn_timer = 0
+    else:
+        angel_spawn_timer += 1
+        if angel_spawn_timer >= FPS:
+            angels.add(Angel())
+            angel_spawn_timer = 0
+    
+    devils.update()
+    angels.update()
+    
+    if in_hell:
+        collided_devils = pygame.sprite.spritecollide(player, devils, True)
+        for devil in collided_devils:
+            if isinstance(devil, Devil) and devil.is_super:
+                hit_count += 2  # Super-Teufel zieht 2 Leben ab
+            else:
+                hit_count += 1  # Normaler Teufel zieht 1 Leben ab
             
-            ##########################################
-            # Events abfragen
-            ##########################################
-            for event in py.event.get():                    # Gehe alle Events des Sysems durch
-                if event.type == py.QUIT:                   # Ist das Spiel beendet worden?
-                    py.quit()                               # Schliesse das Fenster und beende das Programm      
-                
-            
-            keys = py.key.get_pressed()
-            if self.game_state == "intro":
-                self.draw_intro()
-                if keys[py.K_SPACE]:
-                    self.game_state = "game"
-                    self.game_clock = py.time.get_ticks()
-                
-            if self.game_state == "game":
-                self.player_1.move()                
-                self.player_1.change_costume()
-                self.check_collisions()
-                self.draw_game()
-               
-                if py.time.get_ticks() > self.game_clock + 10000: # nach 10 Sekunden wechselt der Game State zu end
-                    self.game_state = "end"
-                
-            if self.game_state == "end":
-                self.draw_game_over()
-                if keys[py.K_SPACE]:
-                    self.game_state = "game"
-                    self.game_clock = py.time.get_ticks()
-                
-
-            py.display.update()                             # Zeichne den Bildschirm neu
-            clock.tick(24)                                  # Der Bildschirm soll alle 1/24 Sekunden aktualisiert werden
-                
-
-
-
-#########################################################################
-# Beginn des Hauptprogramms
-#########################################################################
-
-
-game = Game()
-game.run()
+            if hit_count >= max_hits + extra_lives:
+                running = False
+    else:
+        collided_angels = pygame.sprite.spritecollide(player, angels, True)
+        collected_angels += len(collided_angels)
+    
+    draw_hearts()
+    draw_timers()
+    player_group.draw(screen)
+    devils.draw(screen)
+    angels.draw(screen)
+    pygame.display.flip()
+    clock.tick(FPS)
 
 
