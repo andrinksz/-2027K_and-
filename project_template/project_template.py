@@ -35,14 +35,8 @@ font = pygame.font.SysFont(None, 36)
 
 
 def load_images(path,names,ending,number,xpix,ypix):
-    file_names = []                                                      # Liste der Namen der Bilder generieren
-    for i in range(number):                                              # Alle Namen durchgehen
-        file_names.append(path+names+str(i)+ending)                      # Alle vorhandenen Bildernamen generieren
-    animation = []                                                       # Liste für die Bilder
-    for i in range(number):                                              # Alle Bilder durchgehen
-        img = pygame.image.load(file_names[i]).convert()                     # Bild laden
-        animation.append(pygame.transform.scale(img, (xpix, ypix)))          # Bild vergrössern und in die Liste aufnehmen
-    return animation
+    file_names = [path+names+str(i)+ending for i in range(number)]
+    return [pygame.transform.scale(pygame.image.load(file).convert(), (xpix, ypix)) for file in file_names]
 
 
 def draw_timers():
@@ -75,8 +69,9 @@ class Devil(pygame.sprite.Sprite):
     def __init__(self, direction, is_super=False):
         super().__init__()
         self.is_super = is_super
-        self.images = load_images("res/images/teufel/","teufel",".png",3,40,40)
-        self.rect = self.images.get_rect()
+        self.images = load_images("res/images/teufel/", "teufel", ".png", 3, 40, 40)
+        self.image = self.images[0]  # Erstes Bild setzen
+        self.rect = self.image.get_rect()
         self.speed = random.randint(4, 8) if self.is_super else random.randint(3, 7)
         self.direction = direction
 
@@ -108,6 +103,52 @@ class Devil(pygame.sprite.Sprite):
             self.rect.y > SCREEN_HEIGHT or self.rect.y < 0
         ):
             self.kill()
+
+
+#Superteufelklasse
+class superdevil(pygame.sprite.Sprite):
+    def __init__(self, direction, is_super=False):
+        super().__init__()
+        self.is_super = is_super
+        self.images = load_images("res/images/superteufel/", "superteufel", ".png", 1, 40, 40)
+        self.image = self.images[0]  # Erstes Bild setzen
+        self.rect = self.image.get_rect()
+        self.speed = random.randint(4, 8) if self.is_super else random.randint(3, 7)
+        self.direction = direction
+
+        if self.direction == "left_to_right":
+            self.rect.x = 0
+            self.rect.y = random.randint(0, SCREEN_HEIGHT)
+        elif self.direction == "right_to_left":
+            self.rect.x = SCREEN_WIDTH
+            self.rect.y = random.randint(0, SCREEN_HEIGHT)
+        elif self.direction == "top_to_bottom":
+            self.rect.x = random.randint(0, SCREEN_WIDTH)
+            self.rect.y = 0
+        elif self.direction == "bottom_to_top":
+            self.rect.x = random.randint(0, SCREEN_WIDTH)
+            self.rect.y = SCREEN_HEIGHT
+
+    def update(self):
+        if self.direction == "left_to_right":
+            self.rect.x += self.speed
+        elif self.direction == "right_to_left":
+            self.rect.x -= self.speed
+        elif self.direction == "top_to_bottom":
+            self.rect.y += self.speed
+        elif self.direction == "bottom_to_top":
+            self.rect.y -= self.speed
+        
+        if (
+            self.rect.x > SCREEN_WIDTH or self.rect.x < 0 or
+            self.rect.y > SCREEN_HEIGHT or self.rect.y < 0
+        ):
+            self.kill()
+
+
+
+
+
 
 # Engelklasse
 class Angel(pygame.sprite.Sprite):
@@ -211,5 +252,3 @@ while running:
     angels.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
-
-
