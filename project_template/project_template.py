@@ -105,50 +105,6 @@ class Devil(pygame.sprite.Sprite):
             self.kill()
 
 
-#Superteufelklasse
-class superdevil(pygame.sprite.Sprite):
-    def __init__(self, direction, is_super=False):
-        super().__init__()
-        self.is_super = is_super
-        self.images = load_images("res/images/superteufel/", "superteufel", ".png", 1, 40, 40)
-        self.image = self.images[0]  # Erstes Bild setzen
-        self.rect = self.image.get_rect()
-        self.speed = random.randint(4, 8) if self.is_super else random.randint(3, 7)
-        self.direction = direction
-
-        if self.direction == "left_to_right":
-            self.rect.x = 0
-            self.rect.y = random.randint(0, SCREEN_HEIGHT)
-        elif self.direction == "right_to_left":
-            self.rect.x = SCREEN_WIDTH
-            self.rect.y = random.randint(0, SCREEN_HEIGHT)
-        elif self.direction == "top_to_bottom":
-            self.rect.x = random.randint(0, SCREEN_WIDTH)
-            self.rect.y = 0
-        elif self.direction == "bottom_to_top":
-            self.rect.x = random.randint(0, SCREEN_WIDTH)
-            self.rect.y = SCREEN_HEIGHT
-
-    def update(self):
-        if self.direction == "left_to_right":
-            self.rect.x += self.speed
-        elif self.direction == "right_to_left":
-            self.rect.x -= self.speed
-        elif self.direction == "top_to_bottom":
-            self.rect.y += self.speed
-        elif self.direction == "bottom_to_top":
-            self.rect.y -= self.speed
-        
-        if (
-            self.rect.x > SCREEN_WIDTH or self.rect.x < 0 or
-            self.rect.y > SCREEN_HEIGHT or self.rect.y < 0
-        ):
-            self.kill()
-
-
-
-
-
 
 # Engelklasse
 class Angel(pygame.sprite.Sprite):
