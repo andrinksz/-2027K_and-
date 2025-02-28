@@ -1,3 +1,4 @@
+
 import pygame
 import random
 import sys
@@ -23,21 +24,22 @@ LIGHT_BLUE = (173, 216, 230)
 heart_image = pygame.image.load("res/images/herz/herz.png") 
 heart_image = pygame.transform.scale(heart_image, (30, 30))
 
+
+background_image = pygame.transform.scale(pygame.image.load("res/images/background/hintergrund.jpg"),
+        (SCREEN_WIDTH, SCREEN_HEIGHT))
 # FPS und Zeit
 clock = pygame.time.Clock()
 FPS = 60
 
 total_timer = 0
 phase_timer = 30
-in_hell = True
+in_hell  = True
 
 font = pygame.font.SysFont(None, 36)
-
 
 def load_images(path,names,ending,number,xpix,ypix):
     file_names = [path+names+str(i)+ending for i in range(number)]
     return [pygame.transform.scale(pygame.image.load(file).convert(), (xpix, ypix)) for file in file_names]
-
 
 def draw_timers():
     phase_time_text = font.render(f"{int(phase_timer)}s", True, BLACK)
@@ -63,7 +65,47 @@ class Player(pygame.sprite.Sprite):
             self.rect.x -= self.speed
         if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH:
             self.rect.x += self.speed
+#superdevil
+class SuperDevil(pygame.sprite.Sprite):
+    def __init__(self, direction):
+        super().__init__()
+        self.is_super = True
+        self.images = load_images("res/images/superteufel/", "superteufel", ".png", 1, 40, 40)
+        self.image = self.images[0]  # Erstes Bild setzen
+        self.rect = self.image.get_rect()  # Hier wird rect initialisiert
+        self.speed = random.randint(4, 8)
+        self.direction = direction
 
+        if self.direction == "left_to_right":
+            self.rect.x = 0
+            self.rect.y = random.randint(0, SCREEN_HEIGHT - self.rect.height)
+        elif self.direction == "right_to_left":
+            self.rect.x = SCREEN_WIDTH - self.rect.width
+            self.rect.y = random.randint(0, SCREEN_HEIGHT - self.rect.height)
+        elif self.direction == "top_to_bottom":
+            self.rect.x = random.randint(0, SCREEN_WIDTH - self.rect.width)
+            self.rect.y = 0
+        elif self.direction == "bottom_to_top":
+            self.rect.x = random.randint(0, SCREEN_WIDTH - self.rect.width)
+            self.rect.y = SCREEN_HEIGHT - self.rect.height
+
+    def update(self):
+        if self.direction == "left_to_right":
+            self.rect.x += self.speed
+        elif self.direction == "right_to_left":
+            self.rect.x -= self.speed
+        elif self.direction == "top_to_bottom":
+            self.rect.y += self.speed
+        elif self.direction == "bottom_to_top":
+            self.rect.y -= self.speed
+        
+        if (
+            self.rect.x > SCREEN_WIDTH or self.rect.x < -self.rect.width or
+            self.rect.y > SCREEN_HEIGHT or self.rect.y < -self.rect.height
+        ):
+            self.kill()
+
+    
 # Teufelklasse
 class Devil(pygame.sprite.Sprite):
     def __init__(self, direction, is_super=False):
@@ -104,14 +146,11 @@ class Devil(pygame.sprite.Sprite):
         ):
             self.kill()
 
-
-
 # Engelklasse
 class Angel(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((30, 30))
-        self.image.fill(YELLOW)
+        self.image = load_images("res/images/engel/", "engel", ".png", 1, 40, 40)[0]
         self.rect = self.image.get_rect(
             center=(random.randint(50, SCREEN_WIDTH - 50), random.randint(50, SCREEN_HEIGHT - 50))
         )
@@ -120,6 +159,8 @@ class Angel(pygame.sprite.Sprite):
     def update(self):
         if pygame.time.get_ticks() - self.spawn_time > 2000:
             self.kill()
+
+        
 
 # Spielvariablen
 player = Player()
@@ -140,11 +181,24 @@ devil_count = 0  # Zählt normale Teufel für Super-Teufel-Spawns
 def draw_hearts():
     for i in range(max_hits - hit_count + extra_lives):
         screen.blit(heart_image, (SCREEN_WIDTH - (i + 1) * 35, 10))
+        
 
+        
+def draw_game():
+    screen.blit(self.background_images["img_game"], (0,0))
+    self.all_sprites.draw(screen)
+    
+        
+
+    
+    
 # Hauptspiel-Loop
 running = True
 while running:
-    screen.fill(LIGHT_BLUE if not in_hell else WHITE)
+    if in_hell:
+        screen.blit(background_image, (0,0))
+    else:
+        screen.fill(LIGHT_BLUE)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -176,7 +230,12 @@ while running:
             devil_count += 1
             is_super = devil_count % 20 == 0  # Jeder 20. Teufel ist ein Super-Teufel
             direction = random.choice(["left_to_right", "right_to_left", "top_to_bottom", "bottom_to_top"])
-            devils.add(Devil(direction, is_super))
+            
+            if is_super:
+                devils.add(SuperDevil(direction))  # Super-Teufel spawn
+            else:
+                devils.add(Devil(direction))  # Normale Teufel spawn
+
             spawn_timer = 0
     else:
         angel_spawn_timer += 1
@@ -190,10 +249,10 @@ while running:
     if in_hell:
         collided_devils = pygame.sprite.spritecollide(player, devils, True)
         for devil in collided_devils:
-            if isinstance(devil, Devil) and devil.is_super:
+            if isinstance(devil, SuperDevil):  # Super-Teufel
                 hit_count += 2  # Super-Teufel zieht 2 Leben ab
             else:
-                hit_count += 1  # Normaler Teufel zieht 1 Leben ab
+                hit_count += 1  # Normale Teufel ziehen 1 Leben ab
             
             if hit_count >= max_hits + extra_lives:
                 running = False
