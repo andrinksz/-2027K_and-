@@ -1,4 +1,3 @@
-
 import pygame
 import random
 import sys
@@ -15,25 +14,47 @@ pygame.display.set_caption("Flucht aus der Hölle")
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-DARK_RED = (139, 0, 0)  # Super-Teufel Farbe
+DARK_RED = (139, 0, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 LIGHT_BLUE = (173, 216, 230)
+
+# Schriftart
+font = pygame.font.SysFont(None, 48)
 
 # Herz-Symbol laden
 heart_image = pygame.image.load("res/images/herz/herz.png") 
 heart_image = pygame.transform.scale(heart_image, (30, 30))
 
-
 background_image = pygame.transform.scale(pygame.image.load("res/images/background/hintergrund.jpg"),
-        (SCREEN_WIDTH, SCREEN_HEIGHT))
+                                          (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+start_screen = pygame.transform.scale(pygame.image.load("res/images/startbild/startbild.jpg"),
+                                      (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+def show_start_screen():
+    screen.blit(start_screen, (0, 0))
+    text = font.render("Press ENTER to Start", True, WHITE)
+    text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    screen.blit(text, text_rect)
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                waiting = False
+
 # FPS und Zeit
 clock = pygame.time.Clock()
 FPS = 60
 
 total_timer = 0
 phase_timer = 30
-in_hell  = True
+in_hell = True
 
 font = pygame.font.SysFont(None, 36)
 
@@ -42,10 +63,11 @@ def load_images(path,names,ending,number,xpix,ypix):
     return [pygame.transform.scale(pygame.image.load(file).convert(), (xpix, ypix)) for file in file_names]
 
 def draw_timers():
-    phase_time_text = font.render(f"{int(phase_timer)}s", True, BLACK)
-    total_time_text = font.render(f"{int(total_timer)}s", True, BLACK)
+    phase_time_text = font.render(f"{int(phase_timer)}s", True, WHITE)
+    total_time_text = font.render(f"{int(total_timer)}s", True, WHITE)
     screen.blit(phase_time_text, (10, 10))
     screen.blit(total_time_text, (10, 50))
+
 
 # Spielerklasse
 class Player(pygame.sprite.Sprite):
@@ -65,6 +87,8 @@ class Player(pygame.sprite.Sprite):
             self.rect.x -= self.speed
         if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH:
             self.rect.x += self.speed
+
+
 #superdevil
 class SuperDevil(pygame.sprite.Sprite):
     def __init__(self, direction):
@@ -160,8 +184,6 @@ class Angel(pygame.sprite.Sprite):
         if pygame.time.get_ticks() - self.spawn_time > 2000:
             self.kill()
 
-        
-
 # Spielvariablen
 player = Player()
 player_group = pygame.sprite.Group(player)
@@ -178,20 +200,23 @@ extra_lives = 0
 
 devil_count = 0  # Zählt normale Teufel für Super-Teufel-Spawns
 
+
 def draw_hearts():
     for i in range(max_hits - hit_count + extra_lives):
         screen.blit(heart_image, (SCREEN_WIDTH - (i + 1) * 35, 10))
-        
 
         
 def draw_game():
     screen.blit(self.background_images["img_game"], (0,0))
     self.all_sprites.draw(screen)
     
-        
 
-    
-    
+# Spiel starten
+show_start_screen()
+
+
+        
+        
 # Hauptspiel-Loop
 running = True
 while running:
@@ -260,6 +285,7 @@ while running:
         collided_angels = pygame.sprite.spritecollide(player, angels, True)
         collected_angels += len(collided_angels)
     
+
     draw_hearts()
     draw_timers()
     player_group.draw(screen)
@@ -267,3 +293,5 @@ while running:
     angels.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
+
+pygame.quit()
