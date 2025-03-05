@@ -32,6 +32,9 @@ background_image = pygame.transform.scale(pygame.image.load("res/images/backgrou
 start_screen = pygame.transform.scale(pygame.image.load("res/images/startbild/startbild.jpg"),
                                       (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+end_screen = pygame.transform.scale(pygame.image.load("res/images/endbild/endbild.jpg"),
+                                    (SCREEN_WIDTH, SCREEN_HEIGHT))
+
 def show_start_screen():
     screen.blit(start_screen, (0, 0))
     text = font.render("Press ENTER to Start", True, WHITE)
@@ -47,6 +50,27 @@ def show_start_screen():
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 waiting = False
+
+def show_end_screen(total_time):
+    screen.blit(end_screen, (0, 0))
+    text = font.render(f"Gesamtzeit: {int(total_time)}s", True, WHITE)
+    text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    screen.blit(text, text_rect)
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                waiting = False
+                pygame.quit()
+                sys.exit()
+                
+                
+
 
 # FPS und Zeit
 clock = pygame.time.Clock()
@@ -293,5 +317,8 @@ while running:
     angels.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
+
+# Endbildschirm anzeigen
+show_end_screen(total_timer)
 
 pygame.quit()
