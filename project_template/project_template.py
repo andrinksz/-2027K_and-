@@ -23,11 +23,15 @@ LIGHT_BLUE = (173, 216, 230)
 font = pygame.font.SysFont(None, 48)
 
 # Herz-Symbol laden
-heart_image = pygame.image.load("res/images/herz/herz.png") 
+heart_image = pygame.image.load("res/images/herz/herz.png")
+
 heart_image = pygame.transform.scale(heart_image, (30, 30))
 
 background_image = pygame.transform.scale(pygame.image.load("res/images/background/hintergrund.jpg"),
                                           (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+himmel_image = pygame.transform.scale(pygame.image.load("res/images/himmel/himmel.jpg"),
+                                      (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 start_screen = pygame.transform.scale(pygame.image.load("res/images/startbild/startbild.jpg"),
                                       (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -97,8 +101,9 @@ def draw_timers():
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((50, 50))
-        self.image.fill(BLUE)
+        self.images = load_images("res/images/spielfigur/", "spielfigur", ".png", 1, 60, 60)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
         self.rect = self.image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         self.speed = 5
 
@@ -247,7 +252,7 @@ while running:
     if in_hell:
         screen.blit(background_image, (0,0))
     else:
-        screen.fill(LIGHT_BLUE)
+        screen.blit(himmel_image, (0, 0))
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
