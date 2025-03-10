@@ -21,6 +21,8 @@ LIGHT_BLUE = (173, 216, 230)
 
 # Schriftart
 font = pygame.font.SysFont(None, 48)
+large_font = pygame.font.SysFont(None, 72)  # Große Schrift für Game Over
+
 
 # Herz-Symbol laden
 heart_image = pygame.image.load("res/images/herz/herz.png")
@@ -57,9 +59,18 @@ def show_start_screen():
 
 def show_end_screen(total_time):
     screen.blit(end_screen, (0, 0))
+    game_over_text = large_font.render("GAME OVER", True, WHITE)
+    game_over_rect = game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    screen.blit(game_over_text, game_over_rect)
+    
     text = font.render(f"Gesamtzeit: {int(total_time)}s", True, WHITE)
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(text, text_rect)
+    
+    restart_text = font.render("Press ENTER to Restart", True, WHITE)
+    restart_rect = restart_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 1.5))
+    screen.blit(restart_text, restart_rect)
+    
     pygame.display.flip()
     
     waiting = True
@@ -70,9 +81,7 @@ def show_end_screen(total_time):
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 waiting = False
-                pygame.quit()
-                sys.exit()
-                
+                main()  # Neustart des Spiels
                 
 
 
@@ -243,87 +252,112 @@ def draw_game():
 # Spiel starten
 show_start_screen()
 
-
-        
-        
-# Hauptspiel-Loop
-running = True
-while running:
-    if in_hell:
-        screen.blit(background_image, (0,0))
-    else:
-        screen.blit(himmel_image, (0, 0))
+def main():
+    global total_timer, phase_timer, in_hell, hit_count, extra_lives, collected_angels
     
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    keys = pygame.key.get_pressed()
-    player_group.update(keys)
-
-    # Timer-Update
-    total_timer += 1 / FPS
-    phase_timer -= 1 / FPS
+    # Spielvariablen zurücksetzen
+    total_timer = 0
+    phase_timer = 30
+    in_hell = True
+    hit_count = 0
+    extra_lives = 0
+    collected_angels = 0
     
-    # Wechsel zwischen Hölle (30s) und Himmel (10s)
-    if phase_timer <= 0:
-        in_hell = not in_hell
-        phase_timer = 30 if in_hell else 10
+    player = Player()
+    player_group = pygame.sprite.Group(player)
+    
+    devils = pygame.sprite.Group()
+    angels = pygame.sprite.Group()
+    
+    spawn_timer = 0
+    angel_spawn_timer = 0
+    devil_count = 0  # Zählt normale Teufel für Super-Teufel-Spawns
+    
+    show_start_screen()
+    
+    # Hauptspiel-Loop
+    running = True
+    while running:
+        if in_hell:
+            screen.blit(background_image, (0, 0))
+        else:
+            screen.blit(himmel_image, (0, 0))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        keys = pygame.key.get_pressed()
+        player_group.update(keys)
+
+        # Timer-Update
+        total_timer += 1 / FPS
+        phase_timer -= 1 / FPS
+        
+        # Wechsel zwischen Hölle (30s) und Himmel (10s)
+        if phase_timer <= 0:
+            in_hell = not in_hell
+            phase_timer = 30 if in_hell else 10
+            
+            if in_hell:
+                angels.empty()
+            else:
+                devils.empty()
+
+            extra_lives += collected_angels
+            collected_angels = 0  
+
+        if in_hell:
+            spawn_timer += 1
+            if spawn_timer >= 30:
+                devil_count += 1
+                is_super = devil_count % 20 == 0  # Jeder 20. Teufel ist ein Super-Teufel
+                direction = random.choice(["left_to_right", "right_to_left", "top_to_bottom", "bottom_to_top"])
+                
+                if is_super:
+                    devils.add(SuperDevil(direction))  # Super-Teufel spawn
+                else:
+                    devils.add(Devil(direction))  # Normale Teufel spawn
+
+                spawn_timer = 0
+        else:
+            angel_spawn_timer += 1
+            if angel_spawn_timer >= FPS:
+                angels.add(Angel())
+                angel_spawn_timer = 0
+        
+        devils.update()
+        angels.update()
         
         if in_hell:
-            angels.empty()
+            collided_devils = pygame.sprite.spritecollide(player, devils, True)
+            for devil in collided_devils:
+                if isinstance(devil, SuperDevil):  # Super-Teufel
+                    hit_count += 2  # Super-Teufel zieht 2 Leben ab
+                else:
+                    hit_count += 1  # Normale Teufel ziehen 1 Leben ab
+                
+                if hit_count >= max_hits + extra_lives:
+                    running = False
         else:
-            devils.empty()
-
-        extra_lives += collected_angels
-        collected_angels = 0  
-
-    if in_hell:
-        spawn_timer += 1
-        if spawn_timer >= 30:
-            devil_count += 1
-            is_super = devil_count % 20 == 0  # Jeder 20. Teufel ist ein Super-Teufel
-            direction = random.choice(["left_to_right", "right_to_left", "top_to_bottom", "bottom_to_top"])
-            
-            if is_super:
-                devils.add(SuperDevil(direction))  # Super-Teufel spawn
-            else:
-                devils.add(Devil(direction))  # Normale Teufel spawn
-
-            spawn_timer = 0
-    else:
-        angel_spawn_timer += 1
-        if angel_spawn_timer >= FPS:
-            angels.add(Angel())
-            angel_spawn_timer = 0
+            collided_angels = pygame.sprite.spritecollide(player, angels, True)
+            collected_angels += len(collided_angels)
+        
+        draw_hearts()
+        draw_timers()
+        player_group.draw(screen)
+        devils.draw(screen)
+        angels.draw(screen)
+        pygame.display.flip()
+        clock.tick(FPS)
     
-    devils.update()
-    angels.update()
+    # Endbildschirm anzeigen
+    show_end_screen(total_timer)
+
+if __name__ == "__main__":
+    main()
     
-    if in_hell:
-        collided_devils = pygame.sprite.spritecollide(player, devils, True)
-        for devil in collided_devils:
-            if isinstance(devil, SuperDevil):  # Super-Teufel
-                hit_count += 2  # Super-Teufel zieht 2 Leben ab
-            else:
-                hit_count += 1  # Normale Teufel ziehen 1 Leben ab
-            
-            if hit_count >= max_hits + extra_lives:
-                running = False
-    else:
-        collided_angels = pygame.sprite.spritecollide(player, angels, True)
-        collected_angels += len(collided_angels)
-    
-
-    draw_hearts()
-    draw_timers()
-    player_group.draw(screen)
-    devils.draw(screen)
-    angels.draw(screen)
-    pygame.display.flip()
-    clock.tick(FPS)
-
-# Endbildschirm anzeigen
-show_end_screen(total_timer)
-
 pygame.quit()
+
+
