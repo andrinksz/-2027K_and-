@@ -97,7 +97,7 @@ font = pygame.font.SysFont(None, 36)
 
 def load_images(path,names,ending,number,xpix,ypix):
     file_names = [path+names+str(i)+ending for i in range(number)]
-    return [pygame.transform.scale(pygame.image.load(file).convert(), (xpix, ypix)) for file in file_names]
+    return [pygame.transform.scale(pygame.image.load(file).convert_alpha(), (xpix, ypix)) for file in file_names]
 
 def draw_timers():
     phase_time_text = font.render(f"{int(phase_timer)}s", True, WHITE)
