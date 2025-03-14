@@ -178,6 +178,12 @@ class Devil(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.speed = random.randint(4, 8) if self.is_super else random.randint(3, 7)
         self.direction = direction
+        
+        self.rect.x = random.randint(0, SCREEN_WIDTH - self.rect.width)
+        self.rect.y = random.randint(0, SCREEN_HEIGHT - self.rect.height)
+        
+        self.speed_x = random.randint(2, 5) * random.choice([-1, 1])
+        self.speed_y = random.randint(2, 5) * random.choice([-1, 1])
 
         if self.direction == "left_to_right":
             self.rect.x = 0
@@ -191,8 +197,17 @@ class Devil(pygame.sprite.Sprite):
         elif self.direction == "bottom_to_top":
             self.rect.x = random.randint(0, SCREEN_WIDTH)
             self.rect.y = SCREEN_HEIGHT
+            
 
     def update(self):
+        self.rect.x += self.speed_x
+        self.rect.y += self.speed_y
+        
+        if self.rect.x < 0 or self.rect.x > SCREEN_WIDTH:
+            self.speed_x *= -1
+        if self.rect.y < 0 or self.rect.y > SCREEN_HEIGHT:
+            self.speed_y *= -1
+
         if self.direction == "left_to_right":
             self.rect.x += self.speed
         elif self.direction == "right_to_left":
@@ -359,5 +374,4 @@ if __name__ == "__main__":
     main()
     
 pygame.quit()
-
 
