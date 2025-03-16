@@ -24,7 +24,7 @@ font = pygame.font.SysFont(None, 48)
 large_font = pygame.font.SysFont(None, 72)  # Große Schrift für Game Over
 
 
-# Herz-Symbol laden
+# Bilder und Symbole
 heart_image = pygame.image.load("res/images/herz/herz.png")
 
 heart_image = pygame.transform.scale(heart_image, (30, 30))
@@ -40,7 +40,22 @@ start_screen = pygame.transform.scale(pygame.image.load("res/images/startbild/st
 
 end_screen = pygame.transform.scale(pygame.image.load("res/images/endbild/endbild.jpg"),
                                     (SCREEN_WIDTH, SCREEN_HEIGHT))
+# Sounddateien 
+pygame.mixer.init()
+background_music = "res/sounds/hintergrund.mp3"
+devil_hit_sound = "res/sounds/devil_hit.mp3"
+angel_hit_sound = "res/sounds/angel_hit.mp3"
 
+# Hintergrundmusik (wiederholt)
+pygame.mixer.music.load(background_music)
+pygame.mixer.music.play(-1)
+
+
+def play_sound(sound_file):
+    sound = pygame.mixer.Sound(sound_file)
+    sound.play()
+    
+    
 def show_start_screen():
     screen.blit(start_screen, (0, 0))
     text = font.render("Press ENTER to Start", True, WHITE)
@@ -127,7 +142,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += self.speed
 
 
-#superdevil
+#superdevil Klasse
 class SuperDevil(pygame.sprite.Sprite):
     def __init__(self, direction):
         super().__init__()
@@ -366,6 +381,13 @@ def main():
         angels.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
+        
+        
+         # Kollisionserkennung
+    if pygame.sprite.spritecollideany(player, devils):
+        play_sound(devil_hit_sound)
+    if pygame.sprite.spritecollideany(player, angels):
+        play_sound(angel_hit_sound)
     
     # Endbildschirm anzeigen
     show_end_screen(total_timer)
