@@ -1,3 +1,4 @@
+
 import pygame
 import random
 import sys
@@ -41,7 +42,33 @@ start_screen = pygame.transform.scale(pygame.image.load("res/images/startbild/st
 end_screen = pygame.transform.scale(pygame.image.load("res/images/endbild/endbild.jpg"),
                                     (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+# Sounddateien laden
+pygame.mixer.init()
+hell_sound = pygame.mixer.Sound("res/sounds/hölle.mp3")
+heaven_sound = explosion_sound = pygame.mixer.Sound("res/sounds/explosion.mp3")  # Neuer Sound für Zusammenstöße
+pygame.mixer.Sound("res/sounds/himmel.mp3")
+collect_sound = pygame.mixer.Sound("res/sounds/collect.mp3")  # Neuer Sound für Engel-Kollisionen
+
+
+
+def play_hell_sound():
+    pygame.mixer.stop()
+    hell_sound.play(-1)  # Endlosschleife
+
+def play_heaven_sound():
+    pygame.mixer.stop()
+    heaven_sound.play(-1)  # Endlosschleife
+
+def play_explosion_sound():
+    explosion_sound.play()  # Explosionston abspielen
+
+def play_collect_sound():
+    collect_sound.play()  # Collect-Sound abspielen
     
+
+def stop_sounds():
+    pygame.mixer.stop()
+
 def show_start_screen():
     screen.blit(start_screen, (0, 0))
     text = font.render("Press ENTER to Start", True, WHITE)
@@ -279,6 +306,8 @@ def main():
     extra_lives = 0
     collected_angels = 0
     
+    play_hell_sound()  # Startet den Sound der Hölle
+    
     player = Player()
     player_group = pygame.sprite.Group(player)
     
@@ -322,7 +351,13 @@ def main():
                 devils.empty()
 
             extra_lives += collected_angels
-            collected_angels = 0  
+            collected_angels = 0
+            
+            if in_hell:
+                play_hell_sound()
+            else:
+                play_heaven_sound()
+            
 
         if in_hell:
             spawn_timer += 1
@@ -349,6 +384,7 @@ def main():
         if in_hell:
             collided_devils = pygame.sprite.spritecollide(player, devils, True)
             for devil in collided_devils:
+                play_explosion_sound()  # Explosionston abspielen
                 if isinstance(devil, SuperDevil):  # Super-Teufel
                     hit_count += 2  # Super-Teufel zieht 2 Leben ab
                 else:
@@ -359,6 +395,8 @@ def main():
         else:
             collided_angels = pygame.sprite.spritecollide(player, angels, True)
             collected_angels += len(collided_angels)
+            if collided_angels:
+                play_collect_sound()  # Collect-Sound abspielen
         
         draw_hearts()
         draw_timers()
@@ -375,5 +413,5 @@ def main():
 if __name__ == "__main__":
     main()
     
+stop_sounds()    
 pygame.quit()
-
